@@ -20,12 +20,14 @@ function readLine(): string {
  *  2. 2D_INTEGER_ARRAY edges
  *  3. INTEGER s
  */
+declare type Memo = { [k: number]: IRelativeDistance[] };
 
 function shortestReach(n: number, edges: number[][], s: number): number[] {
+    const memo: Memo = {};
     // console.log("=>", `start: ${s} | nodes: ${n} | edges: ${edges.length}`);
     // Write your code here
     const vertixTotalDistance = new Array(n + 1).fill(Infinity);
-    let processingList: Array<IRelativeDistance> = [];
+    let processingList: IRelativeDistance[] = [];
     const processedList: Array<boolean> = new Array(n + 1);
     let processedCount = 0;
 
@@ -57,7 +59,7 @@ function shortestReach(n: number, edges: number[][], s: number): number[] {
 
         // console.log("processing", vertex);
 
-        const neighbors = getNeighborsOf(vertex, edges)
+        const neighbors = getNeighborsOf(vertex, edges, memo)
             .filter(neighbor => !isProcessed(neighbor.vertex));
 
         // console.log("neighbors", neighbors);
@@ -74,7 +76,7 @@ function shortestReach(n: number, edges: number[][], s: number): number[] {
         });
 
         processingList = processingList.filter(i =>
-            (neighbors.findIndex(j=> i.vertex === j.vertex) < 0)
+            (neighbors.findIndex(j => i.vertex === j.vertex) < 0)
         );
         processingList.push(...neighbors);
         processingList.sort((a, b) => a.distance - b.distance);
@@ -99,14 +101,17 @@ interface IRelativeDistance {
     distance: number;
 }
 
-function getNeighborsOf(vertex: number, edges: number[][]): IRelativeDistance[] {
+function getNeighborsOf(vertex: number, edges: number[][], memo: Memo = {}): IRelativeDistance[] {
+    if (memo[vertex]) return memo[vertex];
 
-    return edges
+    memo[vertex] = edges
         .filter(edge => edge[0] === vertex || edge[1] === vertex)
         .map(edge => ({
             vertex: edge[0] === vertex ? edge[1] : edge[0],
             distance: edge[2]
         }));
+
+    return memo[vertex];
 }
 
 
@@ -136,46 +141,27 @@ function main() {
                 .replace('[', '')
                 .replace(/,/g, ' ')
         );
-        // console.log(" ");
     }
 }
-
-
-
 
 
 // 3 6 4 5 5 4 5 4 3 3 4 6 6 4 4 4 4 5 3 4 5 3 4 6 8 4 5 3 4 4 5 4 6 6 2 4 6 4 4 4 4 5 5 3 4 5 3 6 5 4 5 5 4 4 5 3 3 4 2 3 5 2 4 4 3 4 10 5 5 7 4 4 4 1 4 4 4 5 4 4 5 4 4 5 4 5 6 5 4 4 5 5 5 4 4 4 4 3 4 5 3 3 5 4 6 8 2 5 3 4 4 5 3 5 3 3 4 5 3 6 5
 // 3 6 4 5 5 4 5 4 4 5 4 6 6 4 4 4 4 5 3 4 5 3 4 6 8 4 5 3 4 4 6 4 6 6 2 4 6 4 4 4 5 5 5 3 4 5 3 6 5 4 5 5 4 4 5 3 3 4 2 3 5 2 4 4 3 4 10 5 6 7 5 4 4 1 4 4 4 5 4 4 5 4 4 5 5 5 6 5 4 4 5 5 5 4 4 4 4 3 4 5 3 3 5 4 6 8 2 5 3 4 4 5 3 5 3 3 4 5 3 6 5
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  *
-Software Design: weak
-Databases: medium
-Coding:
+ Software Design: weak
+ Databases: medium
+ Coding:
 
-Languages
-* PHP:
-* Node JS:
+ Languages
+ * PHP:
+ * Node JS:
 
-Problem solving: good
-Docker: medium
-Business oriented:
-Algorithms & data structures: weak
-Testing:
-*/
+ Problem solving: good
+ Docker: medium
+ Business oriented:
+ Algorithms & data structures: weak
+ Testing:
+ */
