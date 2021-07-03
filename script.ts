@@ -1,4 +1,4 @@
-import {inputString} from "./data-1.ts"
+import {inputString} from "./input-7.ts"
 
 
 let inputLines: string[] = [];
@@ -20,33 +20,40 @@ function readLine(): string {
  *  2. 2D_INTEGER_ARRAY edges
  *  3. INTEGER s
  */
-declare type Memo = { [k: number]: IRelativeDistance[] };
+interface IRelativeDistance {
+    vertex: number;
+    distance: number;
+}
+
+declare type NeighborsGraph = { [k: number]: number[] };
 
 function shortestReach(n: number, edges: number[][], s: number): number[] {
-    const memo: Memo = {};
-    // console.log("=>", `start: ${s} | nodes: ${n} | edges: ${edges.length}`);
-    // Write your code here
-    const vertixTotalDistance = new Array(n + 1).fill(Infinity);
+    const neighborsGraph: NeighborsGraph = buildNeighborsGraph(edges);
+    const vertexTotalDistance = new Array(n + 1).fill(Infinity);
     let processingList: IRelativeDistance[] = [];
     const processedList: Array<boolean> = new Array(n + 1);
     let processedCount = 0;
 
 
-    vertixTotalDistance[s] = 0;
+    vertexTotalDistance[s] = 0;
 
     function getNextVertex(): number {
         if (processingList.length === 0) return s;
-        const next = processingList.find(dist => processedList[dist.vertex] !== true);
+        const next = processingList.find(p => processedList[p.vertex] !== true);
         if (next) return next.vertex;
 
-        return processedList.findIndex(v => v !== true);
+        return processedList.findIndex(not(isProcessed));
+    }
+
+    function not(predicate: (...args: any[]) => boolean): (...args: any[]) => boolean {
+        return (...args: any[]) => !predicate(...args)
     }
 
     function isProcessed(vertex: number): boolean {
         return processedList[vertex] === true;
     }
 
-    // get the next vertix to start with
+    // get the next vertex to start with
     // get neighbors
     // calculate path to neighbors
     // update neighbors
@@ -55,63 +62,57 @@ function shortestReach(n: number, edges: number[][], s: number): number[] {
 
     while (processedCount < n) {
         const vertex = getNextVertex();
-        const distance = vertixTotalDistance[vertex];
+        const distance = vertexTotalDistance[vertex];
 
-        // console.log("processing", vertex);
 
-        const neighbors = getNeighborsOf(vertex, edges, memo)
+        const neighbors = getNeighborsOf(vertex, edges, neighborsGraph)
             .filter(neighbor => !isProcessed(neighbor.vertex));
 
-        // console.log("neighbors", neighbors);
-
         neighbors.forEach((neighbor) => {
-            const neighborPrevDist = vertixTotalDistance[neighbor.vertex];
+            const neighborPrevDist = vertexTotalDistance[neighbor.vertex];
             const neighborNewDist = distance + neighbor.distance;
             const shorterDist = Math.min(neighborNewDist, neighborPrevDist);
-
-            // console.log("-- nd-prev", neighborPrevDist);
-            // console.log("-- nd-new ", neighborNewDist);
-            vertixTotalDistance[neighbor.vertex] = shorterDist;
+            vertexTotalDistance[neighbor.vertex] = shorterDist;
             neighbor.distance = shorterDist;
         });
 
-        processingList = processingList.filter(i =>
-            (neighbors.findIndex(j => i.vertex === j.vertex) < 0)
-        );
-        processingList.push(...neighbors);
+        processingList = processingList.concat(neighbors);
         processingList.sort((a, b) => a.distance - b.distance);
         processedList[vertex] = true;
         processedCount++;
-
-        // console.log("processingList", processingList);
-        // console.log("vertixTotalDistance", vertixTotalDistance);
-
     }
 
-
     // removing start item from the code
-    vertixTotalDistance.splice(s, 1);
-    vertixTotalDistance.splice(0, 1);
+    vertexTotalDistance.splice(s, 1);
+    vertexTotalDistance.splice(0, 1);
 
-    return vertixTotalDistance.map(d => d === Infinity ? -1 : d);
+    return vertexTotalDistance.map(d => d === Infinity ? -1 : d);
 }
 
-interface IRelativeDistance {
-    vertex: number;
-    distance: number;
+function buildNeighborsGraph(edges: number[][]) {
+    const x: { [k: number]: number[] } = {};
+
+    for (let i = 0; i < edges.length; i++) {
+        const edge = edges[i];
+
+        if (!x[edge[0]]) x[edge[0]] = [];
+        if (!x[edge[1]]) x[edge[1]] = [];
+
+        x[edge[0]].push(i);
+        x[edge[1]].push(i);
+    }
+
+    return x;
 }
 
-function getNeighborsOf(vertex: number, edges: number[][], memo: Memo = {}): IRelativeDistance[] {
-    if (memo[vertex]) return memo[vertex];
+function getNeighborsOf(vertex: number, edges: number[][], neighborsGraph: NeighborsGraph = {}): IRelativeDistance[] {
 
-    memo[vertex] = edges
-        .filter(edge => edge[0] === vertex || edge[1] === vertex)
-        .map(edge => ({
-            vertex: edge[0] === vertex ? edge[1] : edge[0],
-            distance: edge[2]
-        }));
+    const filteredEdges = neighborsGraph[vertex];
 
-    return memo[vertex];
+    return filteredEdges ? filteredEdges.map(edgeIndex => ({
+        vertex: edges[edgeIndex][0] === vertex ? edges[edgeIndex][1] : edges[edgeIndex][0],
+        distance: edges[edgeIndex][2]
+    })) : [];
 }
 
 
@@ -143,25 +144,3 @@ function main() {
         );
     }
 }
-
-
-// 3 6 4 5 5 4 5 4 3 3 4 6 6 4 4 4 4 5 3 4 5 3 4 6 8 4 5 3 4 4 5 4 6 6 2 4 6 4 4 4 4 5 5 3 4 5 3 6 5 4 5 5 4 4 5 3 3 4 2 3 5 2 4 4 3 4 10 5 5 7 4 4 4 1 4 4 4 5 4 4 5 4 4 5 4 5 6 5 4 4 5 5 5 4 4 4 4 3 4 5 3 3 5 4 6 8 2 5 3 4 4 5 3 5 3 3 4 5 3 6 5
-// 3 6 4 5 5 4 5 4 4 5 4 6 6 4 4 4 4 5 3 4 5 3 4 6 8 4 5 3 4 4 6 4 6 6 2 4 6 4 4 4 5 5 5 3 4 5 3 6 5 4 5 5 4 4 5 3 3 4 2 3 5 2 4 4 3 4 10 5 6 7 5 4 4 1 4 4 4 5 4 4 5 4 4 5 5 5 6 5 4 4 5 5 5 4 4 4 4 3 4 5 3 3 5 4 6 8 2 5 3 4 4 5 3 5 3 3 4 5 3 6 5
-
-
-/**
- *
- Software Design: weak
- Databases: medium
- Coding:
-
- Languages
- * PHP:
- * Node JS:
-
- Problem solving: good
- Docker: medium
- Business oriented:
- Algorithms & data structures: weak
- Testing:
- */
